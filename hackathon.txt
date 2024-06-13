@@ -176,3 +176,37 @@ const ProgressSteps = () => {
 }
 
 export default ProgressSteps
+
+
+
+
+
+
+
+
+
+
+
+public class RuleApplier {
+    public static void applyRules(Map<String, Object> jsonData, Map<String, Object> rules) {
+        for (String ruleName : rules.keySet()) {
+            Map<String, Object> rule = (Map<String, Object>) rules.get(ruleName);
+            boolean isRuleMatched = true;
+            for (String field : rule.keySet()) {
+                if (!"COMMENT".equals(field)) {
+                    Map<String, Object> fieldDetails = (Map<String, Object>) rule.get(field);
+                    String operator = (String) fieldDetails.get("OPERATOR");
+                    String expectedValue = (String) ((Map<String, Object>) fieldDetails.get("VALUE")).get("DATA");
+                    if (!applyFilter(jsonData.get(field), operator, expectedValue)) {
+                        isRuleMatched = false;
+                        break;
+                    }
+                }
+            }
+            if (isRuleMatched) {
+                String comment = (String) ((Map<String, Object>) rule.get("COMMENT")).get("VALUE");
+                jsonData.put("COMMENT", comment);
+                break;
+            }
+        }
+    }
