@@ -70,3 +70,64 @@ private static boolean applyFilter(Object fieldValue, String operator, String ex
     }
     return false; // Field value doesn't match expected type
 }
+
+
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.yaml.snakeyaml.Yaml;
+import java.io.InputStream;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api")
+public class RuleFilterController {
+
+    @PostMapping("/filter")
+    public ResponseEntity<Map<String, Object>> filterJsonFile(@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Please upload a file."));
+        }
+
+        try {
+            // Parse uploaded JSON file
+            Map<String, Object> jsonData = parseJson(file.getInputStream());
+
+            // Parse YAML rules file
+            Map<String, Object> rules = parseYaml("rules.yaml");
+
+            // Apply rules and get comment
+            String comment = applyRulesAndGetComment(jsonData, rules);
+
+            // Create JSON response
+            Map<String, Object> response = Map.of("comment", comment);
+            return ResponseEntity.ok().body(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Failed to process the file."));
+        }
+    }
+
+    // Method to parse JSON file
+    private Map<String, Object> parseJson(InputStream inputStream) {
+        // Implement JSON parsing logic here
+    }
+
+    // Method to parse YAML file
+    private Map<String, Object> parseYaml(String yamlFilePath) {
+        try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(yamlFilePath)) {
+            Yaml yaml = new Yaml();
+            return yaml.load(inputStream);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // Method to apply rules and get comment
+    private String applyRulesAndGetComment(Map<String, Object> jsonData, Map<String, Object> rules) {
+        // Implement logic to apply rules and get comment
+    }
+}
