@@ -286,3 +286,31 @@ private static boolean applyFilter(Object fieldValue, String operator, String ex
     }
     return false;
 }
+
+
+
+
+
+
+
+
+
+
+
+private static boolean applyFilter(Object fieldValue, String operator, String expectedValue) {
+    if (fieldValue instanceof String) {
+        String fieldValueString = (String) fieldValue;
+        // Treat "nan" as blank
+        if ("nan".equalsIgnoreCase(fieldValueString)) {
+            fieldValueString = ""; // Convert "nan" to blank
+        }
+        switch (operator) {
+            case "EQUALS":
+                return fieldValueString.equals(expectedValue);
+            // Add more operators as needed
+            default:
+                return false;
+        }
+    }
+    return false;
+}
