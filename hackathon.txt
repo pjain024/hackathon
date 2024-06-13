@@ -335,3 +335,80 @@ private static boolean applyFilter(Object fieldValue, String operator, String ex
     }
     return false;
 }
+
+
+
+
+
+
+
+
+
+
+import java.util.Map;
+
+public class RuleApplier {
+
+    public static void applyRules(Map<String, Object> jsonData, Map<String, Object> rules) {
+        for (String ruleName : rules.keySet()) {
+            Map<String, Object> rule = (Map<String, Object>) rules.get(ruleName);
+            boolean isRuleMatched = true;
+            for (String field : rule.keySet()) {
+                if (!"COMMENT".equals(field)) {
+                    Object fieldValue = getFieldFromJson(jsonData, field);
+                    if (fieldValue != null) {
+                        Map<String, Object> fieldDetails = (Map<String, Object>) rule.get(field);
+                        String operator = (String) fieldDetails.get("OPERATOR");
+                        String expectedValue = (String) ((Map<String, Object>) fieldDetails.get("VALUE")).get("DATA");
+                        if (!applyFilter(fieldValue, operator, expectedValue)) {
+                            isRuleMatched = false;
+                            break;
+                        }
+                    } else {
+                        // If the field is missing in the JSON data, the rule is not matched
+                        isRuleMatched = false;
+                        break;
+                    }
+                }
+            }
+            if (isRuleMatched) {
+                String comment = (String) ((Map<String, Object>) rule.get("COMMENT")).get("VALUE");
+                jsonData.put("COMMENT", comment);
+                break;
+            }
+        }
+    }
+
+    private static Object getFieldFromJson(Map<String, Object> jsonData, String field) {
+        String[] fieldNames = field.split("\\."); // Split field name if nested
+        Object fieldValue = jsonData;
+        for (String fieldName : fieldNames) {
+            if (fieldValue instanceof Map) {
+                fieldValue = ((Map<String, Object>) fieldValue).get(fieldName);
+            } else {
+                return null; // Field not found
+            }
+        }
+        return fieldValue;
+    }
+
+    // applyFilter method remains the same
+    private static boolean applyFilter(Object fieldValue, String operator, String expectedValue) {
+        // Treat "nan" as blank
+        if ("nan".equalsIgnoreCase(expectedValue)) {
+            expectedValue = ""; // Convert "nan" to blank
+        }
+
+        if (fieldValue instanceof String) {
+            String fieldValueString = (String) fieldValue;
+            switch (operator) {
+                case "EQUALS":
+                    return fieldValueString.equals(expectedValue);
+                // Add more operators as needed
+                default:
+                    return false;
+            }
+        }
+        return false;
+    }
+}
