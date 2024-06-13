@@ -259,3 +259,30 @@ public class RuleApplier {
         return false;
     }
 }
+
+
+
+
+
+
+
+
+private static boolean applyFilter(Object fieldValue, String operator, String expectedValue) {
+    if (fieldValue instanceof String) {
+        String fieldValueString = (String) fieldValue;
+        // Check if the value is "nan" (treat it as missing/empty)
+        if ("nan".equalsIgnoreCase(fieldValueString)) {
+            return false;
+        } else {
+            // Handle non-"nan" values
+            switch (operator) {
+                case "EQUALS":
+                    return fieldValueString.equals(expectedValue);
+                // Add more operators as needed
+                default:
+                    return false;
+            }
+        }
+    }
+    return false;
+}
