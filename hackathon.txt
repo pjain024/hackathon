@@ -163,3 +163,29 @@ public class RuleFilterController {
                                  .body("Failed to process the file.");
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+private Map<String, Object> parseJson(InputStream inputStream) {
+    ObjectMapper objectMapper = new ObjectMapper();
+    try {
+        // Deserialize the JSON input stream into a Map<String, Object>
+        return objectMapper.readValue(inputStream, new TypeReference<Map<String, Object>>() {});
+    } catch (IOException e) {
+        // Handle any IOException that might occur during parsing
+        e.printStackTrace();
+        return null;
+    }
