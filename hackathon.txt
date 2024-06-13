@@ -189,3 +189,7 @@ private Map<String, Object> parseJson(InputStream inputStream) {
         e.printStackTrace();
         return null;
     }
+
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
