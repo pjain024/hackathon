@@ -314,3 +314,24 @@ private static boolean applyFilter(Object fieldValue, String operator, String ex
     }
     return false;
 }
+
+
+
+private static boolean applyFilter(Object fieldValue, String operator, String expectedValue) {
+    // Treat "nan" as blank
+    if ("nan".equalsIgnoreCase(expectedValue)) {
+        expectedValue = ""; // Convert "nan" to blank
+    }
+
+    if (fieldValue instanceof String) {
+        String fieldValueString = (String) fieldValue;
+        switch (operator) {
+            case "EQUALS":
+                return fieldValueString.equals(expectedValue);
+            // Add more operators as needed
+            default:
+                return false;
+        }
+    }
+    return false;
+}
