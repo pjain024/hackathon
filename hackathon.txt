@@ -76,3 +76,91 @@ public class UserController {
     // Implement other CRUD endpoints for users
 }
 Now you can use the /users/team/{teamId} endpoint to get users by team ID and the /users endpoint to create users.
+
+
+
+TeamService:
+java
+Copy code
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.List;
+
+@Service
+public class TeamService {
+    @Autowired
+    private TeamRepository teamRepository;
+
+    public List<Team> getAllTeams() {
+        return teamRepository.findAll();
+    }
+
+    public Team getTeamById(Long id) {
+        return teamRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Team not found with id " + id));
+    }
+
+    public Team createTeam(Team team) {
+        // You can add validation logic here if required
+        return teamRepository.save(team);
+    }
+
+    public Team updateTeam(Long id, Team teamDetails) {
+        Team team = getTeamById(id);
+        team.setName(teamDetails.getName());
+        // Update other fields as needed
+        return teamRepository.save(team);
+    }
+
+    public void deleteTeam(Long id) {
+        Team team = getTeamById(id);
+        teamRepository.delete(team);
+    }
+}
+TeamController:
+java
+Copy code
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/teams")
+public class TeamController {
+    @Autowired
+    private TeamService teamService;
+
+    @GetMapping
+    public List<Team> getAllTeams() {
+        return teamService.getAllTeams();
+    }
+
+    @GetMapping("/{id}")
+    public Team getTeamById(@PathVariable Long id) {
+        return teamService.getTeamById(id);
+    }
+
+    @PostMapping
+    public Team createTeam(@RequestBody Team team) {
+        return teamService.createTeam(team);
+    }
+
+    @PutMapping("/{id}")
+    public Team updateTeam(@PathVariable Long id, @RequestBody Team teamDetails) {
+        return teamService.updateTeam(id, teamDetails);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteTeam(@PathVariable Long id) {
+        teamService.deleteTeam(id);
+    }
+}
+With this setup, you can perform CRUD operations on teams via HTTP endpoints:
+
+GET /teams: Retrieve all teams.
+GET /teams/{id}: Retrieve a specific team by ID.
+POST /teams: Create a new team.
+PUT /teams/{id}: Update an existing team.
+DELETE /teams/{id}: Delete a team.
+Make sure to replace any references to RuntimeException with a more appropriate exception type and handle error responses properly in your controllers for production use. Additionally, consider implementing input validation and error handling as necessary for your application requirements.
