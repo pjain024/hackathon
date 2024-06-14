@@ -64,3 +64,22 @@ private boolean isRuleSatisfied(Map<String, Object> jsonData, Map<String, Object
     }
     return true;
 }
+
+
+
+
+private boolean isRuleSatisfied(Map<String, Object> jsonData, Map<String, Object> rule) {
+    for (Map.Entry<String, Object> fieldEntry : rule.entrySet()) {
+        String fieldName = fieldEntry.getKey();
+        if (!jsonData.containsKey(fieldName)) {
+            return false;
+        }
+        Object jsonValue = jsonData.get(fieldName);
+        Object expectedValue = fieldEntry.getValue();
+        if (!isFieldSatisfied(jsonValue, expectedValue)) {
+            return false;
+        }
+    }
+    return true;
+}
+
