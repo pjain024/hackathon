@@ -1,111 +1,3 @@
-public class RuleFilterController {
-
-    public String applyRulesAndGetComment(Map<String, Object> jsonData, Map<String, Map<String, Map<String, Object>>> rules) {
-        for (Map.Entry<String, Map<String, Map<String, Object>>> entry : rules.entrySet()) {
-            if (isRuleSatisfied(jsonData, entry.getValue())) {
-                return (String) entry.getValue().get("comment").get("value");
-            }
-        }
-        return "No matching rule found";
-    }
-
-    private boolean isRuleSatisfied(Map<String, Object> jsonData, Map<String, Map<String, Object>> rule) {
-        for (Map.Entry<String, Map<String, Object>> fieldEntry : rule.entrySet()) {
-            String fieldName = fieldEntry.getKey();
-            if (!jsonData.containsKey(fieldName)) {
-                return false;
-            }
-            Map<String, Object> fieldData = fieldEntry.getValue();
-            Object jsonValue = jsonData.get(fieldName);
-            if (!isFieldSatisfied(jsonValue, fieldData)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean isFieldSatisfied(Object jsonValue, Map<String, Object> fieldData) {
-        String operator = (String) fieldData.get("operator");
-        Object expectedValue = fieldData.get("value");
-        switch (operator) {
-            case "equals":
-                return jsonValue.equals(expectedValue);
-            // Add more operators as needed
-            default:
-                return false;
-        }
-    }
-
-
-
-
-public String applyRulesAndGetComment(Map<String, Object> jsonData, Map<String, Object> rules) {
-    for (Map.Entry<String, Object> entry : rules.entrySet()) {
-        if (entry.getValue() instanceof Map) {
-            Map<String, Object> rule = (Map<String, Object>) entry.getValue();
-            if (isRuleSatisfied(jsonData, rule)) {
-                return (String) rule.get("comment");
-            }
-        }
-    }
-    return "No matching rule found";
-}
-private boolean isRuleSatisfied(Map<String, Object> jsonData, Map<String, Object> rule) {
-    for (Map.Entry<String, Object> fieldEntry : rule.entrySet()) {
-        String fieldName = fieldEntry.getKey();
-        if (!jsonData.containsKey(fieldName)) {
-            return false;
-        }
-        Object jsonValue = jsonData.get(fieldName);
-        Object expectedValue = fieldEntry.getValue();
-        if (!isFieldSatisfied(jsonValue, expectedValue)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-
-
-
-private boolean isRuleSatisfied(Map<String, Object> jsonData, Map<String, Object> rule) {
-    for (Map.Entry<String, Object> fieldEntry : rule.entrySet()) {
-        String fieldName = fieldEntry.getKey();
-        if (!jsonData.containsKey(fieldName)) {
-            return false;
-        }
-        Object jsonValue = jsonData.get(fieldName);
-        Object expectedValue = fieldEntry.getValue();
-        if (!isFieldSatisfied(jsonValue, expectedValue)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-private boolean isFieldSatisfied(Map<String, Object> jsonValue, Map<String, Object> fieldData) {
-    // Check if jsonValue and fieldData are both maps
-    if (!(jsonValue instanceof Map) || !(fieldData instanceof Map)) {
-        return false; // Return false if either is not a map
-    }
-    
-    // Iterate through each key-value pair in fieldData
-    for (Map.Entry<String, Object> entry : fieldData.entrySet()) {
-        String fieldName = entry.getKey();
-        Object expectedValue = entry.getValue();
-        
-        // Check if jsonValue contains the field and its value matches the expected value
-        if (!jsonValue.containsKey(fieldName) || !isEqual(jsonValue.get(fieldName), expectedValue)) {
-            return false;
-        }
-    }
-    
-    // All key-value pairs in fieldData matched in jsonValue
-    return true;
-}
-
-
-
 private boolean isFieldSatisfied(Object jsonData, Object ruleData) {
     // Check if jsonData and ruleData are both maps
     if (!(jsonData instanceof Map) || !(ruleData instanceof Map)) {
@@ -120,13 +12,26 @@ private boolean isFieldSatisfied(Object jsonData, Object ruleData) {
         String fieldName = entry.getKey();
         Object expectedValue = entry.getValue();
         
-        // Check if jsonData contains the field and its value matches the expected value
-        if (!jsonMap.containsKey(fieldName) || !isEqual(jsonMap.get(fieldName), expectedValue)) {
+        // Check if jsonData contains the field
+        if (!jsonMap.containsKey(fieldName)) {
             return false;
+        }
+        
+        Object jsonValue = jsonMap.get(fieldName);
+
+        // Recursively check nested structures
+        if (jsonValue instanceof Map && expectedValue instanceof Map) {
+            if (!isFieldSatisfied(jsonValue, expectedValue)) {
+                return false;
+            }
+        } else {
+            // Perform direct comparison
+            if (!jsonValue.equals(expectedValue)) {
+                return false;
+            }
         }
     }
     
     // All key-value pairs in ruleData matched in jsonData
     return true;
 }
-
