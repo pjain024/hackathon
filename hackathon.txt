@@ -1,66 +1,37 @@
-import org.yaml.snakeyaml.Yaml;
-
-import java.util.List;
-import java.util.Map;
-
 public class RuleFilterController {
 
-    public String applyRulesAndGetComment(Map<String, Object> jsonData, Map<String, Object> rules) {
-        for (Map.Entry<String, Object> entry : rules.entrySet()) {
-            String ruleKey = entry.getKey();
-            Map<String, Object> rule = (Map<String, Object>) entry.getValue();
-            if (isRuleSatisfied(jsonData, rule)) {
-                return (String) rule.get("comment");
+    public String applyRulesAndGetComment(Map<String, Object> jsonData, Map<String, Map<String, Map<String, Object>>> rules) {
+        for (Map.Entry<String, Map<String, Map<String, Object>>> entry : rules.entrySet()) {
+            if (isRuleSatisfied(jsonData, entry.getValue())) {
+                return (String) entry.getValue().get("comment").get("value");
             }
         }
         return "No matching rule found";
     }
 
-    private boolean isRuleSatisfied(Map<String, Object> jsonData, Map<String, Object> rule) {
-        for (Map.Entry<String, Object> entry : rule.entrySet()) {
-            String field = entry.getKey();
-            if (!jsonData.containsKey(field)) {
+    private boolean isRuleSatisfied(Map<String, Object> jsonData, Map<String, Map<String, Object>> rule) {
+        for (Map.Entry<String, Map<String, Object>> fieldEntry : rule.entrySet()) {
+            String fieldName = fieldEntry.getKey();
+            if (!jsonData.containsKey(fieldName)) {
                 return false;
             }
-            Map<String, Object> jsonFields = (Map<String, Object>) jsonData.get(field);
-            Map<String, Object> ruleFields = (Map<String, Object>) entry.getValue();
-            if (!jsonFields.get("field2").equals(ruleFields.get("value"))) {
+            Map<String, Object> fieldData = fieldEntry.getValue();
+            Object jsonValue = jsonData.get(fieldName);
+            if (!isFieldSatisfied(jsonValue, fieldData)) {
                 return false;
             }
         }
         return true;
     }
 
-    public Map<String, Object> applyFilter(Map<String, Object> jsonData, Map<String, Object> rules) {
-        String comment = applyRulesAndGetComment(jsonData, rules);
-        Map<String, Object> result = Map.of("comment", comment);
-        return result;
+    private boolean isFieldSatisfied(Object jsonValue, Map<String, Object> fieldData) {
+        String operator = (String) fieldData.get("operator");
+        Object expectedValue = fieldData.get("value");
+        switch (operator) {
+            case "equals":
+                return jsonValue.equals(expectedValue);
+            // Add more operators as needed
+            default:
+                return false;
+        }
     }
-
-    public static void main(String[] args) {
-        // Example JSON data
-        String jsonDataString = "{\"amodel\":{\"field1\":\"value1\",\"field2\":\"value2\"}}";
-        Yaml yaml = new Yaml();
-        // Example YAML rules
-        String yamlRulesString = "rules:\n" +
-                "  rule1:\n" +
-                "    field1:\n" +
-                "      operator: equals\n" +
-                "      value: value1\n" +
-                "    field2:\n" +
-                "      operator: equals\n" +
-                "      value: value2\n" +
-                "    comment: Rule 1 matched";
-        // Parse JSON data
-        Map<String, Object> jsonData = yaml.load(jsonDataString);
-        // Parse YAML rules
-        Map<String, Object> yamlRules = yaml.load(yamlRulesString);
-
-        // Create an instance of the RuleFilterController class
-        RuleFilterController ruleFilterController = new RuleFilterController();
-        // Apply filter
-        Map<String, Object> filteredData = ruleFilterController.applyFilter(jsonData, yamlRules);
-        // Print the filtered data
-        System.out.println(filteredData);
-    }
-}
