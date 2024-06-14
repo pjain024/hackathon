@@ -1,195 +1,66 @@
 import org.yaml.snakeyaml.Yaml;
+
+import java.util.List;
 import java.util.Map;
 
-public class RuleApplier {
-
-    public static String applyRulesAndGetComment(Map<String, Object> jsonData, Map<String, Object> rules) {
-        for (String ruleName : rules.keySet()) {
-            Map<String, Object> rule = (Map<String, Object>) rules.get(ruleName);
-            if (isRuleSatisfied(jsonData, rule)) {
-                return (String) ((Map<String, Object>) rule.get("COMMENT")).get("VALUE");
-            }
-        }
-        return ""; // No rule matched
-    }
-
-    private static boolean isRuleSatisfied(Map<String, Object> jsonData, Map<String, Object> rule) {
-        for (String field : rule.keySet()) {
-            if (!"COMMENT".equals(field)) {
-                Object fieldValue = getFieldFromJson(jsonData, field);
-                if (fieldValue != null) {
-                    Map<String, Object> fieldDetails = (Map<String, Object>) rule.get(field);
-                    String operator = (String) fieldDetails.get("OPERATOR");
-                    String expectedValue = (String) ((Map<String, Object>) fieldDetails.get("VALUE")).get("DATA");
-                    if (!applyFilter(fieldValue, operator, expectedValue)) {
-                        return false;
-                    }
-                } else {
-                    return false; // If the field is missing in the JSON data, the rule is not satisfied
-                }
-            }
-        }
-        return true; // All conditions of the rule are satisfied
-    }
-
-    // Implement getFieldFromJson and applyFilter methods as described in previous responses
-}
-
-private static Object getFieldFromJson(Map<String, Object> jsonData, String fieldPath) {
-    String[] fieldNames = fieldPath.split("\\.");
-    Map<String, Object> currentObject = jsonData;
-
-    for (String fieldName : fieldNames) {
-        if (currentObject.containsKey(fieldName)) {
-            Object fieldValue = currentObject.get(fieldName);
-            if (fieldValue instanceof Map) {
-                currentObject = (Map<String, Object>) fieldValue;
-            } else {
-                return fieldValue;
-            }
-        } else {
-            return null; // Field not found
-        }
-    }
-    return null;
-}
-private static boolean applyFilter(Object fieldValue, String operator, String expectedValue) {
-    if ("nan".equalsIgnoreCase(expectedValue)) {
-        expectedValue = ""; // Treat "nan" as blank
-    }
-
-    if (fieldValue instanceof String) {
-        String fieldValueString = (String) fieldValue;
-        switch (operator) {
-            case "EQUALS":
-                return fieldValueString.equals(expectedValue);
-            // Add more operators as needed
-            default:
-                return false;
-        }
-    }
-    return false; // Field value doesn't match expected type
-}
-
-
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import org.yaml.snakeyaml.Yaml;
-import java.io.InputStream;
-import java.util.Map;
-
-@RestController
-@RequestMapping("/api")
 public class RuleFilterController {
 
-    @PostMapping("/filter")
-    public ResponseEntity<Map<String, Object>> filterJsonFile(@RequestParam("file") MultipartFile file) {
-        if (file.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Please upload a file."));
+    public String applyRulesAndGetComment(Map<String, Object> jsonData, Map<String, Object> rules) {
+        for (Map.Entry<String, Object> entry : rules.entrySet()) {
+            String ruleKey = entry.getKey();
+            Map<String, Object> rule = (Map<String, Object>) entry.getValue();
+            if (isRuleSatisfied(jsonData, rule)) {
+                return (String) rule.get("comment");
+            }
         }
-
-        try {
-            // Parse uploaded JSON file
-            Map<String, Object> jsonData = parseJson(file.getInputStream());
-
-            // Parse YAML rules file
-            Map<String, Object> rules = parseYaml("rules.yaml");
-
-            // Apply rules and get comment
-            String comment = applyRulesAndGetComment(jsonData, rules);
-
-            // Create JSON response
-            Map<String, Object> response = Map.of("comment", comment);
-            return ResponseEntity.ok().body(response);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Failed to process the file."));
-        }
+        return "No matching rule found";
     }
 
-    // Method to parse JSON file
-    private Map<String, Object> parseJson(InputStream inputStream) {
-        // Implement JSON parsing logic here
-    }
-
-    // Method to parse YAML file
-    private Map<String, Object> parseYaml(String yamlFilePath) {
-        try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(yamlFilePath)) {
-            Yaml yaml = new Yaml();
-            return yaml.load(inputStream);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+    private boolean isRuleSatisfied(Map<String, Object> jsonData, Map<String, Object> rule) {
+        for (Map.Entry<String, Object> entry : rule.entrySet()) {
+            String field = entry.getKey();
+            if (!jsonData.containsKey(field)) {
+                return false;
+            }
+            Map<String, Object> jsonFields = (Map<String, Object>) jsonData.get(field);
+            Map<String, Object> ruleFields = (Map<String, Object>) entry.getValue();
+            if (!jsonFields.get("field2").equals(ruleFields.get("value"))) {
+                return false;
+            }
         }
+        return true;
     }
 
-    // Method to apply rules and get comment
-    private String applyRulesAndGetComment(Map<String, Object> jsonData, Map<String, Object> rules) {
-        // Implement logic to apply rules and get comment
+    public Map<String, Object> applyFilter(Map<String, Object> jsonData, Map<String, Object> rules) {
+        String comment = applyRulesAndGetComment(jsonData, rules);
+        Map<String, Object> result = Map.of("comment", comment);
+        return result;
+    }
+
+    public static void main(String[] args) {
+        // Example JSON data
+        String jsonDataString = "{\"amodel\":{\"field1\":\"value1\",\"field2\":\"value2\"}}";
+        Yaml yaml = new Yaml();
+        // Example YAML rules
+        String yamlRulesString = "rules:\n" +
+                "  rule1:\n" +
+                "    field1:\n" +
+                "      operator: equals\n" +
+                "      value: value1\n" +
+                "    field2:\n" +
+                "      operator: equals\n" +
+                "      value: value2\n" +
+                "    comment: Rule 1 matched";
+        // Parse JSON data
+        Map<String, Object> jsonData = yaml.load(jsonDataString);
+        // Parse YAML rules
+        Map<String, Object> yamlRules = yaml.load(yamlRulesString);
+
+        // Create an instance of the RuleFilterController class
+        RuleFilterController ruleFilterController = new RuleFilterController();
+        // Apply filter
+        Map<String, Object> filteredData = ruleFilterController.applyFilter(jsonData, yamlRules);
+        // Print the filtered data
+        System.out.println(filteredData);
     }
 }
-
-
-
-
-
-
-
-
-    @PostMapping("/filter")
-    public ResponseEntity<?> filterJsonFile(@RequestParam("file") MultipartFile file) {
-        if (file.isEmpty()) {
-            return ResponseEntity.badRequest().body("Please upload a file.");
-        }
-
-        try {
-            // Parse uploaded JSON file
-            Map<String, Object> jsonData = parseJson(file.getInputStream());
-
-            // Parse YAML rules file
-            Map<String, Object> rules = parseYaml("rules.yaml");
-
-            // Apply rules and get comment
-            String comment = applyRulesAndGetComment(jsonData, rules);
-
-            // Create JSON response
-            return ResponseEntity.ok().body(Map.of("comment", comment));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                 .body("Failed to process the file.");
-        }
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-private Map<String, Object> parseJson(InputStream inputStream) {
-    ObjectMapper objectMapper = new ObjectMapper();
-    try {
-        // Deserialize the JSON input stream into a Map<String, Object>
-        return objectMapper.readValue(inputStream, new TypeReference<Map<String, Object>>() {});
-    } catch (IOException e) {
-        // Handle any IOException that might occur during parsing
-        e.printStackTrace();
-        return null;
-    }
-
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
