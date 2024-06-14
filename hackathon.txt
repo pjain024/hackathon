@@ -83,3 +83,23 @@ private boolean isRuleSatisfied(Map<String, Object> jsonData, Map<String, Object
     return true;
 }
 
+private boolean isFieldSatisfied(Map<String, Object> jsonValue, Map<String, Object> fieldData) {
+    // Check if jsonValue and fieldData are both maps
+    if (!(jsonValue instanceof Map) || !(fieldData instanceof Map)) {
+        return false; // Return false if either is not a map
+    }
+    
+    // Iterate through each key-value pair in fieldData
+    for (Map.Entry<String, Object> entry : fieldData.entrySet()) {
+        String fieldName = entry.getKey();
+        Object expectedValue = entry.getValue();
+        
+        // Check if jsonValue contains the field and its value matches the expected value
+        if (!jsonValue.containsKey(fieldName) || !isEqual(jsonValue.get(fieldName), expectedValue)) {
+            return false;
+        }
+    }
+    
+    // All key-value pairs in fieldData matched in jsonValue
+    return true;
+}
