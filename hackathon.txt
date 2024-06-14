@@ -35,3 +35,32 @@ public class RuleFilterController {
                 return false;
         }
     }
+
+
+
+
+public String applyRulesAndGetComment(Map<String, Object> jsonData, Map<String, Object> rules) {
+    for (Map.Entry<String, Object> entry : rules.entrySet()) {
+        if (entry.getValue() instanceof Map) {
+            Map<String, Object> rule = (Map<String, Object>) entry.getValue();
+            if (isRuleSatisfied(jsonData, rule)) {
+                return (String) rule.get("comment");
+            }
+        }
+    }
+    return "No matching rule found";
+}
+private boolean isRuleSatisfied(Map<String, Object> jsonData, Map<String, Object> rule) {
+    for (Map.Entry<String, Object> fieldEntry : rule.entrySet()) {
+        String fieldName = fieldEntry.getKey();
+        if (!jsonData.containsKey(fieldName)) {
+            return false;
+        }
+        Object jsonValue = jsonData.get(fieldName);
+        Object expectedValue = fieldEntry.getValue();
+        if (!isFieldSatisfied(jsonValue, expectedValue)) {
+            return false;
+        }
+    }
+    return true;
+}
